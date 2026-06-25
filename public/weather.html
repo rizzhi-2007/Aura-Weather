@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aura — Weather</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet" />
+<style>
+/* =========================================================
+   AURA WEATHER — Premium glassmorphism weather UI
+   Pure HTML/CSS/Vanilla JS. No frameworks.
+   ========================================================= */
+
+/* ---------- Reset & Base ---------- */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;}
+:root{
+  --bg-1:#0b1020; --bg-2:#1a2a4a;
+  --text:#f5f7ff; --muted:rgba(245,247,255,.7); --dim:rgba(245,247,255,.45);
+  --glass:rgba(255,255,255,.08);
+  --glass-strong:rgba(255,255,255,.14);
+  --stroke:rgba(255,255,255,.18);
+  --shadow:0 20px 60px rgba(0,0,0,.35);
+  --radius:24px;
+  --accent:#7cc6ff;
+  --grad: radial-gradient(1200px 800px at 10% 0%, #2a4d8f 0%, transparent 60%),
+          radial-gradient(900px 700px at 100% 10%, #5a3a8f 0%, transparent 55%),
+          linear-gradient(180deg, #0b1020 0%, #111935 100%);
+}
+body{
+  font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  color:var(--text);
+  background:var(--grad);
+  background-attachment:fixed;
+  min-height:100%;
+  overflow-x:hidden;
+  transition: background 1.2s ease;
+}
+body.light{ --text:#0d1430; --muted:rgba(13,20,48,.7); --dim:rgba(13,20,48,.5); --glass:rgba(255,255,255,.55); --glass-strong:rgba(255,255,255,.7); --stroke:rgba(13,20,48,.08); --shadow:0 20px 60px rgba(20,30,80,.18);}
+
+/* ---------- Theme backgrounds per condition ---------- */
+body.theme-sunny   { background: radial-gradient(1000px 700px at 15% 10%, #ffd27a 0%, transparent 55%), radial-gradient(900px 800px at 90% 0%, #ff8a5b 0%, transparent 55%), linear-gradient(180deg,#ff7a59 0%,#ffb36b 60%,#ffd28a 100%); }
+body.theme-cloudy  { background: radial-gradient(900px 700px at 20% 10%, #6f8aab 0%, transparent 55%), linear-gradient(180deg,#3d4d66 0%,#6a7d99 100%); }
+body.theme-rainy   { background: radial-gradient(900px 700px at 20% 10%, #3a5a8c 0%, transparent 55%), linear-gradient(180deg,#1b2742 0%,#2d4368 100%); }
+body.theme-storm   { background: radial-gradient(900px 700px at 20% 10%, #2a2d55 0%, transparent 55%), linear-gradient(180deg,#0a0d20 0%,#1b1f3d 100%); }
+body.theme-snow    { background: radial-gradient(900px 700px at 20% 10%, #cfe3ff 0%, transparent 55%), linear-gradient(180deg,#7fa3cc 0%,#cfe1f5 100%); }
+body.theme-night   { background: radial-gradient(900px 700px at 20% 10%, #2a3a7a 0%, transparent 60%), radial-gradient(700px 700px at 90% 80%, #5a3a8f 0%, transparent 60%), linear-gradient(180deg,#05081a 0%,#0d1638 100%); }
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:20px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.32);background-clip:padding-box;border:2px solid transparent}
+
+/* ---------- Layout ---------- */
+.app{
+  max-width:1200px;margin:0 auto;padding:28px 24px 80px;
+  position:relative;z-index:2;
+}
+header.topbar{
+  display:flex;align-items:center;gap:16px;justify-content:space-between;
+  margin-bottom:28px;
+}
+.brand{display:flex;align-items:center;gap:12px;font-family:'Manrope';font-weight:800;letter-spacing:.5px}
+.brand .logo{
+  width:38px;height:38px;border-radius:12px;
+  background:linear-gradient(135deg,#7cc6ff,#a78bfa);
+  display:grid;place-items:center;box-shadow:0 8px 24px rgba(124,198,255,.35);
+}
+.brand .logo svg{width:22px;height:22px;color:#0b1020}
+.brand h1{font-size:18px;letter-spacing:1px}
+
+.controls{display:flex;align-items:center;gap:10px}
+.icon-btn{
+  width:42px;height:42px;border-radius:14px;border:1px solid var(--stroke);
+  background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  display:grid;place-items:center;cursor:pointer;color:var(--text);
+  transition:transform .2s ease, background .25s ease;
+}
+.icon-btn:hover{transform:translateY(-2px);background:var(--glass-strong)}
+.icon-btn svg{width:18px;height:18px}
+
+/* ---------- Search ---------- */
+.search{
+  position:relative;flex:1;max-width:420px;
+}
+.search input{
+  width:100%;height:46px;border-radius:16px;border:1px solid var(--stroke);
+  background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  padding:0 48px 0 44px;color:var(--text);font-size:14px;outline:none;
+  transition:border-color .2s ease, background .25s ease;
+  font-family:inherit;
+}
+.search input::placeholder{color:var(--dim)}
+.search input:focus{border-color:rgba(124,198,255,.6);background:var(--glass-strong)}
+.search .ico{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);width:18px;height:18px}
+.search .go{
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  width:34px;height:34px;border-radius:12px;border:0;cursor:pointer;
+  background:linear-gradient(135deg,#7cc6ff,#a78bfa);color:#0b1020;
+  display:grid;place-items:center;
+}
+.search .go svg{width:16px;height:16px}
+
+/* ---------- Grid ---------- */
+.grid{
+  display:grid;grid-template-columns: 1.15fr .85fr;gap:20px;
+}
+@media (max-width:900px){ .grid{grid-template-columns:1fr} }
+
+.glass{
+  background:var(--glass);
+  border:1px solid var(--stroke);
+  border-radius:var(--radius);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  box-shadow: var(--shadow);
+  position:relative;overflow:hidden;
+}
+.card-enter{animation:cardIn .7s cubic-bezier(.2,.7,.2,1) both}
+.card-enter:nth-child(2){animation-delay:.07s}
+.card-enter:nth-child(3){animation-delay:.14s}
+.card-enter:nth-child(4){animation-delay:.21s}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px) scale(.98);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+
+/* ---------- Hero ---------- */
+.hero{padding:28px;min-height:340px;display:flex;flex-direction:column;gap:18px;position:relative}
+.hero .loc{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px}
+.hero .city{font-family:'Manrope';font-weight:800;font-size:34px;letter-spacing:.5px;line-height:1.1}
+.hero .date{color:var(--muted);font-size:13px}
+.hero .temp-row{display:flex;align-items:flex-start;gap:16px;margin-top:8px}
+.hero .temp{font-family:'Manrope';font-weight:300;font-size:120px;line-height:.9;letter-spacing:-4px}
+.hero .temp sup{font-size:36px;font-weight:400;vertical-align:top;margin-left:6px;opacity:.8}
+.hero .cond{font-size:18px;font-weight:500;margin-top:8px}
+.hero .feels{color:var(--muted);font-size:14px;margin-top:4px}
+.hero .hero-icon{
+  position:absolute;right:24px;top:24px;width:160px;height:160px;
+  display:grid;place-items:center;opacity:.95;
+  filter: drop-shadow(0 12px 30px rgba(0,0,0,.35));
+}
+.hero .hero-icon svg{width:100%;height:100%}
+
+/* ---------- Details grid ---------- */
+.details{padding:22px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media (max-width:700px){ .details{grid-template-columns:repeat(2,1fr)} }
+.detail{
+  padding:16px;border-radius:18px;background:rgba(255,255,255,.05);
+  border:1px solid var(--stroke);
+  display:flex;flex-direction:column;gap:6px;min-height:110px;
+  transition:transform .25s ease, background .25s ease;
+}
+body.light .detail{background:rgba(255,255,255,.45)}
+.detail:hover{transform:translateY(-3px);background:rgba(255,255,255,.1)}
+body.light .detail:hover{background:rgba(255,255,255,.7)}
+.detail .lbl{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.detail .val{font-family:'Manrope';font-weight:600;font-size:22px;margin-top:4px}
+.detail .sub{font-size:12px;color:var(--dim)}
+.detail .ico{width:18px;height:18px;color:var(--muted)}
+
+/* ---------- Hourly ---------- */
+.section-title{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 10px}
+.section-title h3{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.hourly{padding:0 14px 18px}
+.h-scroll{display:flex;gap:10px;overflow-x:auto;padding:6px 8px 12px;scroll-snap-type:x mandatory}
+.hour{
+  flex:0 0 auto;width:78px;padding:14px 8px;border-radius:18px;
+  background:rgba(255,255,255,.06);border:1px solid var(--stroke);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  scroll-snap-align:start;transition:transform .25s ease, background .25s ease;
+}
+body.light .hour{background:rgba(255,255,255,.55)}
+.hour:hover{transform:translateY(-4px);background:rgba(255,255,255,.12)}
+.hour .t{font-size:12px;color:var(--muted)}
+.hour .ic{width:30px;height:30px}
+.hour .deg{font-family:'Manrope';font-weight:600;font-size:16px}
+
+/* ---------- 7 day ---------- */
+.daily{padding:6px 22px 18px;display:flex;flex-direction:column}
+.day-row{
+  display:grid;grid-template-columns:1.1fr .8fr 1fr 1.4fr;align-items:center;
+  padding:12px 6px;border-bottom:1px solid var(--stroke);gap:10px;
+}
+.day-row:last-child{border-bottom:0}
+.day-row .d{font-weight:600}
+.day-row .ic{width:28px;height:28px}
+.day-row .lh{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:13px}
+.day-row .bar{position:relative;height:6px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden}
+body.light .day-row .bar{background:rgba(13,20,48,.1)}
+.day-row .bar > i{position:absolute;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,#7cc6ff,#ffd27a,#ff7a59)}
+
+/* ---------- Favorites ---------- */
+.favs{padding:16px 22px 20px;display:flex;flex-wrap:wrap;gap:8px}
+.fav{
+  display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;
+  background:rgba(255,255,255,.08);border:1px solid var(--stroke);font-size:13px;cursor:pointer;
+  transition:transform .2s ease, background .25s ease;
+}
+.fav:hover{transform:translateY(-2px);background:rgba(255,255,255,.16)}
+.fav .x{opacity:.6;font-size:14px}
+.fav-empty{color:var(--dim);font-size:13px}
+
+/* ---------- Loading / Skeleton ---------- */
+.skeleton{position:relative;overflow:hidden;background:rgba(255,255,255,.07);border-radius:12px}
+.skeleton::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);
+  animation:shimmer 1.6s infinite;
+}
+@keyframes shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+
+.loader-wrap{display:none;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:18px}
+.loader-wrap.show{display:flex}
+.loader{width:54px;height:54px;border-radius:50%;border:3px solid rgba(255,255,255,.18);border-top-color:#fff;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- Error ---------- */
+.error{display:none;text-align:center;padding:30px 22px}
+.error.show{display:block;animation:cardIn .5s ease both}
+.error h4{font-family:'Manrope';font-size:18px;margin-bottom:6px}
+.error p{color:var(--muted);font-size:13px}
+
+/* ---------- Particles layer ---------- */
+.fx{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+.cloud{
+  position:absolute;border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.85), rgba(255,255,255,.25) 60%, transparent 70%);
+  filter:blur(2px);opacity:.5;
+}
+@keyframes drift { from{transform:translateX(-10vw)} to{transform:translateX(110vw)} }
+
+.rain{position:absolute;width:1.5px;height:14px;background:linear-gradient(180deg,rgba(180,210,255,.0),rgba(180,210,255,.85));border-radius:2px;animation: fall linear infinite}
+@keyframes fall { from{transform:translateY(-20vh)} to{transform:translateY(120vh)} }
+
+.snow{position:absolute;width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.9);box-shadow:0 0 6px rgba(255,255,255,.6);animation: snowfall linear infinite}
+@keyframes snowfall { 0%{transform:translateY(-10vh) translateX(0)} 100%{transform:translateY(110vh) translateX(40px)} }
+
+.flash{position:absolute;inset:0;background:rgba(255,255,255,.7);opacity:0;pointer-events:none;mix-blend-mode:screen}
+.flash.on{animation: flash 0.6s ease}
+@keyframes flash { 0%{opacity:0} 10%{opacity:.9} 20%{opacity:.1} 30%{opacity:.7} 50%{opacity:0} 100%{opacity:0} }
+
+.sun{position:absolute;top:-80px;right:-80px;width:340px;height:340px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,220,150,.9) 0%, rgba(255,160,80,.5) 40%, transparent 70%);
+  filter:blur(6px);opacity:.8;animation:pulse 6s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.08);opacity:1}}
+
+.star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;opacity:.8;animation:twinkle 3s ease-in-out infinite}
+@keyframes twinkle{50%{opacity:.2}}
+
+footer.foot{margin-top:28px;text-align:center;color:var(--dim);font-size:12px}
+
+/* hide on tiny */
+@media (max-width:520px){
+  .hero .temp{font-size:96px}
+  .hero .hero-icon{width:120px;height:120px;top:18px;right:14px}
+  .brand h1{display:none}
+}
+</style>
+</head>
+<body class="theme-night">
+
+<!-- Animated background FX -->
+<div class="fx" id="fx"></div>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 18a5 5 0 0 0 0-10 7 7 0 0 0-13.6 2A4.5 4.5 0 0 0 5 18z"/></svg>
+      </div>
+      <h1>AURA</h1>
+    </div>
+
+    <div class="search">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="searchInput" type="text" placeholder="Search city…" autocomplete="off" spellcheck="false" />
+      <button class="go" id="searchBtn" aria-label="Search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <div class="controls">
+      <button class="icon-btn" id="favBtn" title="Save city">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      </button>
+      <button class="icon-btn" id="themeBtn" title="Toggle theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Loader -->
+  <div class="glass loader-wrap" id="loader">
+    <div class="loader"></div>
+    <div style="color:var(--muted);font-size:13px">Fetching weather…</div>
+  </div>
+
+  <!-- Error -->
+  <div class="glass error" id="error">
+    <h4 id="errTitle">Something went wrong</h4>
+    <p id="errMsg">We couldn't find that city. Try another search.</p>
+  </div>
+
+  <!-- Main grid -->
+  <main class="grid" id="main">
+    <!-- Hero -->
+    <section class="glass hero card-enter" id="hero">
+      <div class="loc">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span id="locText">Locating…</span>
+      </div>
+      <div class="city" id="cityName">—</div>
+      <div class="date" id="dateText">—</div>
+      <div class="temp-row">
+        <div class="temp" id="temp">--<sup>°</sup></div>
+      </div>
+      <div class="cond" id="cond">—</div>
+      <div class="feels" id="feels">Feels like —°</div>
+      <div class="hero-icon" id="heroIcon"></div>
+    </section>
+
+    <!-- Details -->
+    <section class="glass card-enter">
+      <div class="section-title"><h3>Conditions</h3></div>
+      <div class="details" id="details">
+        <!-- filled by JS -->
+      </div>
+    </section>
+
+    <!-- Hourly -->
+    <section class="glass card-enter" style="grid-column:1/-1">
+      <div class="section-title"><h3>Hourly Forecast</h3><span id="hourlyHint" style="color:var(--dim);font-size:12px">Next 24 hours</span></div>
+      <div class="hourly">
+        <div class="h-scroll" id="hourly"></div>
+      </div>
+    </section>
+
+    <!-- 7-day + Favorites -->
+    <section class="glass card-enter">
+      <div class="section-title"><h3>7-Day Forecast</h3></div>
+      <div class="daily" id="daily"></div>
+    </section>
+
+    <section class="glass card-enter">
+      <div class="section-title">
+        <h3>Favorite Cities</h3>
+        <span style="color:var(--dim);font-size:12px">Tap to load · ✕ to remove</span>
+      </div>
+      <div class="favs" id="favs"></div>
+    </section>
+  </main>
+
+  <footer class="foot">Made with care · Powered by Open-Meteo</footer>
+</div>
+
+<script>
+/* =========================================================
+   AURA WEATHER — Vanilla JS
+   Uses Open-Meteo (no API key needed) for geocoding + forecast.
+   ========================================================= */
+
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+
+const el = {
+  body: document.body,
+  fx: $('#fx'),
+  loader: $('#loader'),
+  error: $('#error'),
+  errTitle: $('#errTitle'),
+  errMsg: $('#errMsg'),
+  main: $('#main'),
+  search: $('#searchInput'),
+  searchBtn: $('#searchBtn'),
+  themeBtn: $('#themeBtn'),
+  favBtn: $('#favBtn'),
+  city: $('#cityName'),
+  loc: $('#locText'),
+  date: $('#dateText'),
+  temp: $('#temp'),
+  cond: $('#cond'),
+  feels: $('#feels'),
+  heroIcon: $('#heroIcon'),
+  details: $('#details'),
+  hourly: $('#hourly'),
+  daily: $('#daily'),
+  favs: $('#favs'),
+};
+
+/* ---------- WMO Weather Code Mapping ---------- */
+// https://open-meteo.com/en/docs (WMO codes)
+const WMO = {
+  0:  {label:'Clear sky', icon:'sun',     theme:'sunny'},
+  1:  {label:'Mainly clear', icon:'sun',  theme:'sunny'},
+  2:  {label:'Partly cloudy', icon:'pcloud', theme:'cloudy'},
+  3:  {label:'Overcast', icon:'cloud',    theme:'cloudy'},
+  45: {label:'Fog', icon:'fog',           theme:'cloudy'},
+  48: {label:'Rime fog', icon:'fog',      theme:'cloudy'},
+  51: {label:'Light drizzle', icon:'drizzle', theme:'rainy'},
+  53: {label:'Drizzle', icon:'drizzle',   theme:'rainy'},
+  55: {label:'Heavy drizzle', icon:'drizzle', theme:'rainy'},
+  61: {label:'Light rain', icon:'rain',   theme:'rainy'},
+  63: {label:'Rain', icon:'rain',         theme:'rainy'},
+  65: {label:'Heavy rain', icon:'rain',   theme:'rainy'},
+  66: {label:'Freezing rain', icon:'rain',theme:'rainy'},
+  67: {label:'Freezing rain', icon:'rain',theme:'rainy'},
+  71: {label:'Light snow', icon:'snow',   theme:'snow'},
+  73: {label:'Snow', icon:'snow',         theme:'snow'},
+  75: {label:'Heavy snow', icon:'snow',   theme:'snow'},
+  77: {label:'Snow grains', icon:'snow',  theme:'snow'},
+  80: {label:'Rain showers', icon:'rain', theme:'rainy'},
+  81: {label:'Rain showers', icon:'rain', theme:'rainy'},
+  82: {label:'Violent showers', icon:'rain', theme:'rainy'},
+  85: {label:'Snow showers', icon:'snow', theme:'snow'},
+  86: {label:'Snow showers', icon:'snow', theme:'snow'},
+  95: {label:'Thunderstorm', icon:'storm',theme:'storm'},
+  96: {label:'Thunderstorm', icon:'storm',theme:'storm'},
+  99: {label:'Thunderstorm', icon:'storm',theme:'storm'},
+};
+const wmo = (c) => WMO[c] || {label:'Unknown', icon:'cloud', theme:'cloudy'};
+
+/* ---------- SVG icons ---------- */
+const ICONS = {
+  sun: (s=80) => `<svg viewBox="0 0 64 64" width="${s}" height="${s}"><defs><radialGradient id="g1" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff2b0"/><stop offset="1" stop-color="#ffb347"/></radialGradient></defs><circle cx="32" cy="32" r="14" fill="url(#g1)"/><g stroke="#ffd27a" stroke-width="2.5" stroke-linecap="round"><path d="M32 6v8M32 50v8M6 32h8M50 32h8M13 13l6 6M45 45l6 6M51 13l-6 6M19 45l-6 6"/></g></svg>`,
+  pcloud: (s=80) => `<svg viewBox="0 0 64 64" width="${s}" height="${s}"><circle cx="22" cy="22" r="10" fill="#ffd27a"/><path d="M44 44a8 8 0 0 0 0-16 11 11 0 0 0-20.5 3A7 7 0 0 0 26 44z" fill="#e7eefc" stroke="rgba(0,0,0,.08)"/></svg>`,
+  cloud: (s=80) => `<svg viewBox="0 0 64 64" width="${s}" height="${s}"><path d="M46 44a9 9 0 0 0 0-18 12 12 0 0 0-22.5 3A8 8 0 0 0 26 44z" fill="#e7eefc"/></svg>`,
+  rain: (s=80) => `<svg viewBox="0 0 64 64" width="${s}" height="${s}"><path d="M46 38a9 9 0 0 0 0-18 12 12 0 0 0-22.5 3A8 8 0 0 0 26 38z" fill="#cfdcf0"/><g stroke="#7cc6ff" stroke-width="2.5" stroke-linecap="round"><path d="M22 46l-3 7M32 46l-3 7M42 46l-3 7"/></g></svg>`,
+  drizzle: (s=80) => `<svg viewBox="0 0 64 64" width="${s}" height="${s}"><path d="M46 38a9 9 0 0 0 0-18 12 12 0 0 0-22.5 3A8 8 0 0 0 26 38z" fill="#cfdcf0"/><g fill="#7cc6ff"><circle cx="22" cy="50" r="1.6"/><circle cx="32" cy="50" r="1.6"/><circle cx="42" cy="50" r="1.6"/></g></svg>`,
+  snow: (s=80) => `<svg viewBox="0 0 64 64" width="${s}" height="${s}"><path d="M46 38a9 9 0 0 0 0-18 12 12 0 0 0-22.5 3A8 8 0 0 0 26 38z" fill="#eaf2ff"/><g fill="#fff"><circle cx="22" cy="50" r="2"/><circle cx="32" cy="52" r="2"/><circle cx="42" cy="50" r="2"/></g></svg>`,
+  storm: (s=80) => `<svg viewBox="0 0 64 64" width="${s}" height="${s}"><path d="M46 36a9 9 0 0 0 0-18 12 12 0 0 0-22.5 3A8 8 0 0 0 26 36z" fill="#9aa6c2"/><path d="M30 38l-6 12h7l-3 8 10-14h-7l3-6z" fill="#ffd84d"/></svg>`,
+  fog: (s=80) => `<svg viewBox="0 0 64 64" width="${s}" height="${s}"><path d="M46 34a9 9 0 0 0 0-18 12 12 0 0 0-22.5 3A8 8 0 0 0 26 34z" fill="#dde6f2"/><g stroke="#cdd6e3" stroke-width="3" stroke-linecap="round"><path d="M12 44h40M16 52h32"/></g></svg>`,
+  moon: (s=80) => `<svg viewBox="0 0 64 64" width="${s}" height="${s}"><path d="M44 38A18 18 0 0 1 26 20a17 17 0 0 1 1-6 19 19 0 1 0 23 23 17 17 0 0 1-6 1z" fill="#e7eefc"/></svg>`,
+};
+
+function iconFor(code, isNight=false, size=80){
+  const w = wmo(code);
+  if(isNight && (w.icon==='sun' || w.icon==='pcloud')) return ICONS.moon(size);
+  return (ICONS[w.icon] || ICONS.cloud)(size);
+}
+
+/* ---------- Theme / FX ---------- */
+let fxTimer=null;
+function setTheme(code, isNight){
+  const w = wmo(code);
+  let theme = w.theme;
+  if(isNight && (theme==='sunny' || theme==='cloudy')) theme = 'night';
+  el.body.classList.remove('theme-sunny','theme-cloudy','theme-rainy','theme-storm','theme-snow','theme-night');
+  el.body.classList.add('theme-'+theme);
+  renderFX(theme);
+}
+
+function renderFX(theme){
+  el.fx.innerHTML = '';
+  if(fxTimer){ clearInterval(fxTimer); fxTimer=null; }
+
+  if(theme==='sunny'){
+    const sun=document.createElement('div'); sun.className='sun'; el.fx.appendChild(sun);
+    for(let i=0;i<5;i++) addCloud(0.35);
+  } else if(theme==='cloudy'){
+    for(let i=0;i<8;i++) addCloud(0.55);
+  } else if(theme==='rainy'){
+    for(let i=0;i<5;i++) addCloud(0.45);
+    for(let i=0;i<120;i++) addRain();
+  } else if(theme==='storm'){
+    for(let i=0;i<5;i++) addCloud(0.5);
+    for(let i=0;i<160;i++) addRain();
+    const flash=document.createElement('div'); flash.className='flash'; el.fx.appendChild(flash);
+    fxTimer = setInterval(()=>{
+      flash.classList.remove('on'); void flash.offsetWidth; flash.classList.add('on');
+    }, 4200 + Math.random()*3000);
+  } else if(theme==='snow'){
+    for(let i=0;i<3;i++) addCloud(0.6);
+    for(let i=0;i<80;i++) addSnow();
+  } else if(theme==='night'){
+    for(let i=0;i<70;i++) addStar();
+    for(let i=0;i<3;i++) addCloud(0.25);
+  }
+}
+function addCloud(opacity=.5){
+  const c=document.createElement('div'); c.className='cloud';
+  const w = 120 + Math.random()*260;
+  c.style.width = w+'px'; c.style.height = (w*.55)+'px';
+  c.style.top = (Math.random()*55)+'%';
+  c.style.opacity = opacity;
+  const dur = 60 + Math.random()*80;
+  c.style.animation = `drift ${dur}s linear ${-Math.random()*dur}s infinite`;
+  el.fx.appendChild(c);
+}
+function addRain(){
+  const r=document.createElement('div'); r.className='rain';
+  r.style.left = (Math.random()*100)+'%';
+  const dur = 0.5 + Math.random()*0.7;
+  r.style.animationDuration = dur+'s';
+  r.style.animationDelay = (-Math.random()*dur)+'s';
+  r.style.opacity = 0.4 + Math.random()*0.5;
+  el.fx.appendChild(r);
+}
+function addSnow(){
+  const s=document.createElement('div'); s.className='snow';
+  s.style.left=(Math.random()*100)+'%';
+  const dur = 6 + Math.random()*8;
+  s.style.animationDuration = dur+'s';
+  s.style.animationDelay = (-Math.random()*dur)+'s';
+  s.style.opacity = 0.5 + Math.random()*0.5;
+  const sc = 0.4 + Math.random()*1.2;
+  s.style.transform = `scale(${sc})`;
+  el.fx.appendChild(s);
+}
+function addStar(){
+  const s=document.createElement('div'); s.className='star';
+  s.style.left=(Math.random()*100)+'%';
+  s.style.top=(Math.random()*70)+'%';
+  s.style.animationDelay = (Math.random()*3)+'s';
+  el.fx.appendChild(s);
+}
+
+/* ---------- Data ---------- */
+async function geocode(q){
+  const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=en&format=json`);
+  if(!r.ok) throw new Error('Geocoding failed');
+  const j = await r.json();
+  if(!j.results || !j.results.length) throw new Error('NotFound');
+  const x = j.results[0];
+  return { name: x.name, country: x.country, admin: x.admin1, lat: x.latitude, lon: x.longitude, tz: x.timezone };
+}
+async function fetchWeather(lat, lon, tz='auto'){
+  const u = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+    + `&current=temperature_2m,apparent_temperature,relative_humidity_2m,is_day,precipitation,weather_code,wind_speed_10m,pressure_msl,surface_pressure,visibility`
+    + `&hourly=temperature_2m,weather_code,is_day`
+    + `&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max`
+    + `&timezone=${encodeURIComponent(tz)}`;
+  const r = await fetch(u);
+  if(!r.ok) throw new Error('Weather API failed');
+  return r.json();
+}
+
+/* ---------- Renderers ---------- */
+function fmtTime(iso, opts={hour:'numeric'}){ return new Date(iso).toLocaleTimeString([], opts); }
+function fmtDay(iso){ return new Date(iso).toLocaleDateString([], {weekday:'short'}); }
+function fmtFullDate(d=new Date()){ return d.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'}); }
+
+function uvLabel(v){ if(v<3) return 'Low'; if(v<6) return 'Moderate'; if(v<8) return 'High'; if(v<11) return 'Very High'; return 'Extreme'; }
+function aqiFakeFromWeather(c){ return c>=60 ? 'Moderate' : 'Good'; } // placeholder; Open-Meteo AQ is separate endpoint
+
+function renderHero(place, cur){
+  const w = wmo(cur.weather_code);
+  const isNight = !cur.is_day;
+  el.loc.textContent = [place.admin, place.country].filter(Boolean).join(', ');
+  el.city.textContent = place.name;
+  el.date.textContent = fmtFullDate();
+  el.temp.innerHTML = `${Math.round(cur.temperature_2m)}<sup>°C</sup>`;
+  el.cond.textContent = w.label;
+  el.feels.textContent = `Feels like ${Math.round(cur.apparent_temperature)}°`;
+  el.heroIcon.innerHTML = iconFor(cur.weather_code, isNight, 160);
+  setTheme(cur.weather_code, isNight);
+}
+
+function detailCard(label, value, sub=''){
+  return `<div class="detail">
+    <div class="lbl">${label}</div>
+    <div class="val">${value}</div>
+    ${sub?`<div class="sub">${sub}</div>`:''}
+  </div>`;
+}
+function renderDetails(cur, daily){
+  const sunrise = daily.sunrise?.[0] ? fmtTime(daily.sunrise[0],{hour:'2-digit',minute:'2-digit'}) : '—';
+  const sunset  = daily.sunset?.[0]  ? fmtTime(daily.sunset[0], {hour:'2-digit',minute:'2-digit'}) : '—';
+  const uv = daily.uv_index_max?.[0] ?? 0;
+  const vis = (cur.visibility ?? 0)/1000;
+  el.details.innerHTML = [
+    detailCard('Humidity', `${cur.relative_humidity_2m}%`, 'Relative'),
+    detailCard('Wind', `${Math.round(cur.wind_speed_10m)} km/h`, 'At 10m'),
+    detailCard('Pressure', `${Math.round(cur.pressure_msl ?? cur.surface_pressure)} hPa`, 'Sea level'),
+    detailCard('UV Index', `${Math.round(uv)}`, uvLabel(uv)),
+    detailCard('Visibility', `${vis.toFixed(1)} km`, vis>10?'Excellent':vis>4?'Good':'Reduced'),
+    detailCard('Air Quality', aqiFakeFromWeather(cur.weather_code), 'Estimated'),
+    detailCard('Sunrise', sunrise, 'Local time'),
+    detailCard('Sunset', sunset, 'Local time'),
+  ].join('');
+}
+
+function renderHourly(hourly){
+  // Find current hour index
+  const now = new Date();
+  const times = hourly.time;
+  let idx = times.findIndex(t => new Date(t) >= now);
+  if(idx < 0) idx = 0;
+  const slice = (a) => a.slice(idx, idx+24);
+  const ts = slice(times), ts2 = slice(hourly.temperature_2m), wc = slice(hourly.weather_code), nd = slice(hourly.is_day);
+  el.hourly.innerHTML = ts.map((t,i)=>{
+    const lbl = (i===0) ? 'Now' : new Date(t).toLocaleTimeString([], {hour:'numeric'});
+    return `<div class="hour">
+      <div class="t">${lbl}</div>
+      <div class="ic">${iconFor(wc[i], !nd[i], 30)}</div>
+      <div class="deg">${Math.round(ts2[i])}°</div>
+    </div>`;
+  }).join('');
+}
+
+function renderDaily(daily){
+  const max = Math.max(...daily.temperature_2m_max);
+  const min = Math.min(...daily.temperature_2m_min);
+  const range = Math.max(1, max-min);
+  el.daily.innerHTML = daily.time.map((d,i)=>{
+    const hi = daily.temperature_2m_max[i], lo = daily.temperature_2m_min[i];
+    const left  = ((lo-min)/range)*100;
+    const width = Math.max(8, ((hi-lo)/range)*100);
+    return `<div class="day-row">
+      <div class="d">${i===0?'Today':fmtDay(d)}</div>
+      <div class="ic">${iconFor(daily.weather_code[i], false, 28)}</div>
+      <div class="lh">${Math.round(lo)}° <span style="opacity:.5">·</span> <strong style="color:var(--text)">${Math.round(hi)}°</strong></div>
+      <div class="bar"><i style="left:${left}%;width:${width}%"></i></div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- Favorites ---------- */
+const FAV_KEY = 'aura.favs.v1';
+let favs = JSON.parse(localStorage.getItem(FAV_KEY) || '[]');
+function saveFavs(){ localStorage.setItem(FAV_KEY, JSON.stringify(favs)); renderFavs(); }
+function renderFavs(){
+  if(!favs.length){ el.favs.innerHTML = `<span class="fav-empty">No favorites yet. Tap the bookmark to save the current city.</span>`; return; }
+  el.favs.innerHTML = favs.map((f,i)=>`<span class="fav" data-i="${i}">📍 ${f.name}<span class="x" data-x="${i}">✕</span></span>`).join('');
+  $$('.fav', el.favs).forEach(n=>{
+    n.addEventListener('click', (e)=>{
+      if(e.target.dataset.x !== undefined){
+        favs.splice(+e.target.dataset.x,1); saveFavs(); return;
+      }
+      const f = favs[+n.dataset.i]; loadByPlace(f);
+    });
+  });
+}
+
+/* ---------- Flow ---------- */
+let currentPlace = null;
+function showLoader(on){ el.loader.classList.toggle('show', on); el.main.style.display = on?'none':''; if(on) el.error.classList.remove('show'); }
+function showError(title, msg){
+  el.errTitle.textContent = title;
+  el.errMsg.textContent = msg;
+  el.error.classList.add('show');
+  el.main.style.display = 'none';
+  el.loader.classList.remove('show');
+}
+
+async function loadByPlace(place){
+  try{
+    showLoader(true);
+    if(!navigator.onLine) throw new Error('Offline');
+    const data = await fetchWeather(place.lat, place.lon, place.tz || 'auto');
+    currentPlace = place;
+    renderHero(place, data.current);
+    renderDetails(data.current, data.daily);
+    renderHourly(data.hourly);
+    renderDaily(data.daily);
+    showLoader(false);
+  }catch(e){
+    if(e.message==='Offline') showError('You appear to be offline','Check your connection and try again.');
+    else showError('Something went wrong','We couldn\u2019t load weather data. Please try again.');
+  }
+}
+
+async function loadByQuery(q){
+  try{
+    showLoader(true);
+    const place = await geocode(q);
+    await loadByPlace(place);
+  }catch(e){
+    if(e.message==='NotFound') showError('City not found','Try a different spelling or a nearby city.');
+    else if(!navigator.onLine) showError('You appear to be offline','Check your connection and try again.');
+    else showError('Search failed','Please try again in a moment.');
+  }
+}
+
+/* ---------- Events ---------- */
+el.searchBtn.addEventListener('click', ()=>{ const q=el.search.value.trim(); if(q) loadByQuery(q); });
+el.search.addEventListener('keydown', e => { if(e.key==='Enter'){ const q=el.search.value.trim(); if(q) loadByQuery(q); }});
+el.themeBtn.addEventListener('click', ()=> el.body.classList.toggle('light'));
+el.favBtn.addEventListener('click', ()=>{
+  if(!currentPlace) return;
+  if(favs.find(f=>f.name===currentPlace.name && f.country===currentPlace.country)) return;
+  favs.unshift(currentPlace); favs = favs.slice(0,12); saveFavs();
+});
+
+/* ---------- Init ---------- */
+renderFavs();
+function tryGeo(){
+  if(!('geolocation' in navigator)){ loadByQuery('San Francisco'); return; }
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      try{
+        const { latitude:lat, longitude:lon } = pos.coords;
+        // Reverse geocode via Open-Meteo: there isn't a reverse endpoint, so we use coords as the "place"
+        const data = await fetchWeather(lat, lon, 'auto');
+        // Try to get a label via search on nearest city: skip — use coordinates label
+        const place = { name:'Your Location', country:'', admin:'', lat, lon, tz:'auto' };
+        currentPlace = place;
+        renderHero(place, data.current);
+        renderDetails(data.current, data.daily);
+        renderHourly(data.hourly);
+        renderDaily(data.daily);
+        showLoader(false);
+      }catch(e){ loadByQuery('San Francisco'); }
+    },
+    () => loadByQuery('San Francisco'),
+    { timeout: 4000 }
+  );
+}
+showLoader(true);
+tryGeo();
+</script>
+</body>
+</html>
