@@ -15,7 +15,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <iframe
-      src="/weather.html"
+      src="/index.html"
       title="Aura Weather"
       style={{ position: "fixed", inset: 0, width: "100vw", height: "100vh", border: 0 }}
     />
